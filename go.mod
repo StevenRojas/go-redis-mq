@@ -1,4 +1,4 @@
-module StevenRojas/go-redis-mq
+module github.com/StevenRojas/go-redis-mq
 
 go 1.12
 
