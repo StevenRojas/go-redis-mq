@@ -1,4 +1,4 @@
-module StevenRojas/go-redis
+module StevenRojas/go-redis-mq
 
 go 1.12
 
