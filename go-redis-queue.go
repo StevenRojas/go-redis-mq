@@ -12,7 +12,7 @@ const consumerPrefix = "consumer"
 type RedisQueueWrapper interface {
 	PublishString(message string) error
 	PublishBytes(payload []byte) error
-	CreateConsumer(notifyTo chan []byte, errorChan chan error, prefetchLimit int, pollDuration time.Duration) (RedisQueueConsumer, error)
+	CreateConsumer(notifyTo chan []byte, errorChan chan error) (RedisQueueConsumer, error)
 }
 
 type redisQueueWrapper struct {
@@ -40,13 +40,9 @@ func (mq *redisQueueWrapper) PublishBytes(payload []byte) error {
 }
 
 // CreateConsumer creates a consumer that get messages or errors from the messaging queue
-func (mq *redisQueueWrapper) CreateConsumer(
-	notifyTo chan []byte,
-	errorChan chan error,
-	prefetchLimit int,
-	pollDuration time.Duration,
-) (RedisQueueConsumer, error) {
-
+func (mq *redisQueueWrapper) CreateConsumer(notifyTo chan []byte, errorChan chan error) (RedisQueueConsumer, error) {
+	prefetchLimit := 10
+	pollDuration := time.Second
 	err := mq.queue.StartConsuming(int64(prefetchLimit), pollDuration)
 	if err != nil {
 		return nil, err
