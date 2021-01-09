@@ -14,17 +14,6 @@ type redisStreamWrapper struct {
 	ch         chan interface{}
 }
 
-// NewRedisStreamWrapper creates a stream
-func NewRedisStreamWrapper(c *redis.Client, streamName string, bufferSize int, limit int) RedisStreamWrapper {
-	return &redisStreamWrapper{
-		c:          c,
-		stream:     streamName,
-		bufferSize: bufferSize,
-		limit:      limit,
-		ch:         make(chan interface{}, bufferSize),
-	}
-}
-
 // Publish publish data into the stream
 func (s redisStreamWrapper) Publish(message interface{}) (string, error) {
 	args := redis.XAddArgs{

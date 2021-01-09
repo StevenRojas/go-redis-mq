@@ -26,6 +26,8 @@ type RedisWrapper interface {
 	Subscribe(ctx context.Context, channel string, notifyTo chan string)
 	// CreateQueue creates a messaging queue
 	CreateQueue(queueName string, errChan chan error) (RedisQueueWrapper, error)
+	// CreateStream creates a stream that sends incoming messages into a buffered channel
+	CreateStream(streamName string, bufferSize int) RedisStreamWrapper
 }
 
 type redisWapper struct {
@@ -82,4 +84,14 @@ func (w *redisWapper) CreateQueue(queueName string, errChan chan error) (RedisQu
 	return &redisQueueWrapper{
 		queue: queue,
 	}, nil
+}
+
+// CreateStream creates a stream that sends incoming messages into a buffered channel
+func (w *redisWapper) CreateStream(streamName string, bufferSize int) RedisStreamWrapper {
+	return &redisStreamWrapper{
+		c:          w.C,
+		stream:     streamName,
+		bufferSize: bufferSize,
+		ch:         make(chan interface{}, bufferSize),
+	}
 }
