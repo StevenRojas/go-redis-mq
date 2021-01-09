@@ -10,9 +10,10 @@ const consumerPrefix = "consumer"
 
 // RedisQueueWrapper interface to publish messages into a messaging queue and create consumers
 type RedisQueueWrapper interface {
-	PublishString(message string) error
-	PublishBytes(payload []byte) error
-	CreateConsumer(notifyTo chan []byte, errorChan chan error) (RedisQueueConsumer, error)
+	// Publish publish to a messaging queue
+	Publish(payload []byte) error
+	// Subscribe subscribe to a messaging queue
+	Subscribe(notifyTo chan []byte, errorChan chan error) error
 }
 
 type redisQueueWrapper struct {
@@ -21,6 +22,7 @@ type redisQueueWrapper struct {
 
 // RedisQueueConsumer interface to consume messages from a messaging queue
 type RedisQueueConsumer interface {
+	// Consume this method is called automatically when a new message arrive to the messaging queue
 	Consume(delivery rmq.Delivery)
 }
 
@@ -29,33 +31,29 @@ type redisQueueConsumer struct {
 	errorChan chan error
 }
 
-// PublishString publish a string into the messaging queue
-func (mq *redisQueueWrapper) PublishString(message string) error {
-	return mq.queue.Publish(message)
-}
-
 // PublishBytes publish a bytes into the messaging queue
-func (mq *redisQueueWrapper) PublishBytes(payload []byte) error {
+func (mq *redisQueueWrapper) Publish(payload []byte) error {
 	return mq.queue.PublishBytes(payload)
 }
 
 // CreateConsumer creates a consumer that get messages or errors from the messaging queue
-func (mq *redisQueueWrapper) CreateConsumer(notifyTo chan []byte, errorChan chan error) (RedisQueueConsumer, error) {
+func (mq *redisQueueWrapper) Subscribe(notifyTo chan []byte, errorChan chan error) error {
 	prefetchLimit := 10
 	pollDuration := time.Second
 	err := mq.queue.StartConsuming(int64(prefetchLimit), pollDuration)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	consumer := &redisQueueConsumer{
 		notifyTo:  notifyTo,
 		errorChan: errorChan,
 	}
 	_, err = mq.queue.AddConsumer(consumerPrefix, consumer)
-	return nil, nil
+	return nil
 }
 
-// Consume method that gets a payload from the messaging queue and sends a notification to the corresponding channel
+// Consume this method is called automatically when a new message arrive to the messaging queue
+// It sends the received message to the notifyTo chan
 func (c *redisQueueConsumer) Consume(delivery rmq.Delivery) {
 	payload := delivery.Payload()
 	c.notifyTo <- []byte(payload)

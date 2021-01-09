@@ -20,8 +20,11 @@ type redisConfig struct {
 // RedisWrapper Redis wrapper to handle pub/sub calls
 type RedisWrapper interface {
 	Ping(ctx context.Context) (string, error)
+	// Publish into Pub/Sub
 	Publish(ctx context.Context, channel string, message []byte) error
+	// Subscribe into Pub/Sub
 	Subscribe(ctx context.Context, channel string, notifyTo chan string)
+	// CreateQueue creates a messaging queue
 	CreateQueue(queueName string, errChan chan error) (RedisQueueWrapper, error)
 }
 
