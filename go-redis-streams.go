@@ -4,6 +4,8 @@ import "github.com/go-redis/redis/v7"
 
 // RedisStreamWrapper interface to handle streams
 type RedisStreamWrapper interface {
+	// Publish publish data into the stream
+	Publish(message interface{}) (string, error)
 }
 
 type redisStreamWrapper struct {
