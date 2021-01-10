@@ -19,17 +19,17 @@ type redisStreamWrapper struct {
 	c           *redis.Client
 	stream      string
 	bufferSize  int
-	messageChan chan interface{} // Channel where the consumed messages are send
-	errChan     chan error
+	MessageChan chan interface{} // Channel where the consumed messages are send
+	ErrChan     chan error
 }
 
 // SetChannels set the message and error channels
 func (s *redisStreamWrapper) SetChannels(messageChan chan interface{}, errChan chan error) {
 	if messageChan != nil {
-		s.messageChan = messageChan
+		s.MessageChan = messageChan
 	}
 	if errChan != nil {
-		s.errChan = errChan
+		s.ErrChan = errChan
 	}
 }
 
@@ -46,7 +46,7 @@ func (s *redisStreamWrapper) Publish(message interface{}) (string, error) {
 
 // Consume consume messages from the stream with a count limit. If 0 it will consume all messages
 func (s *redisStreamWrapper) Consume(count int64) {
-	s.messageChan = make(chan interface{}, s.bufferSize)
+	s.MessageChan = make(chan interface{}, s.bufferSize)
 	go func() {
 		for {
 			var err error
@@ -57,7 +57,7 @@ func (s *redisStreamWrapper) Consume(count int64) {
 				data, err = s.c.XRange(s.stream, "-", "+").Result()
 			}
 			if err != nil {
-				s.errChan <- err
+				s.ErrChan <- err
 				continue
 			}
 			for _, element := range data {
@@ -65,10 +65,10 @@ func (s *redisStreamWrapper) Consume(count int64) {
 				var message map[string]interface{}
 				err := msgpack.Unmarshal(data, message)
 				if err != nil {
-					s.errChan <- err
+					s.ErrChan <- err
 					continue
 				}
-				s.messageChan <- message
+				s.MessageChan <- message
 				s.c.XDel(s.stream, element.ID) // Remove consumed message
 			}
 		}
