@@ -9,13 +9,15 @@ import (
 type RedisStreamWrapper interface {
 	// Publish publish data into the stream
 	Publish(message interface{}) (string, error)
+	// Consume consume messages from the stream with a count limit. If 0 it will consume all messages
+	Consume(count int64)
 }
 
 type redisStreamWrapper struct {
 	c          *redis.Client
 	stream     string
 	bufferSize int
-	ch         chan interface{}
+	ch         chan interface{} // Channel where the consumed messages are send
 	errChan    chan error
 }
 
@@ -30,6 +32,7 @@ func (s redisStreamWrapper) Publish(message interface{}) (string, error) {
 	return s.c.XAdd(&args).Result()
 }
 
+// Consume consume messages from the stream with a count limit. If 0 it will consume all messages
 func (s *redisStreamWrapper) Consume(count int64) {
 	s.ch = make(chan interface{}, s.bufferSize)
 	go func() {
