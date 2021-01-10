@@ -92,7 +92,7 @@ func (s *redisStreamWrapper) Consume(count int64) {
 			}
 			// channel to stop listen the stream
 			s.finishedChan <- true
-			break
+			//break
 		}
 	}()
 }
