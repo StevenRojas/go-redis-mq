@@ -25,8 +25,12 @@ type redisStreamWrapper struct {
 
 // SetChannels set the message and error channels
 func (s *redisStreamWrapper) SetChannels(messageChan chan interface{}, errChan chan error) {
-	s.messageChan = messageChan
-	s.errChan = errChan
+	if messageChan != nil {
+		s.messageChan = messageChan
+	}
+	if errChan != nil {
+		s.errChan = errChan
+	}
 }
 
 // Publish publish data into the stream

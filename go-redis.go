@@ -89,8 +89,9 @@ func (w *redisWapper) CreateQueue(queueName string, errChan chan error) (RedisQu
 // CreateStream creates a stream that sends incoming messages into a buffered channel
 func (w *redisWapper) CreateStream(streamName string, bufferSize int) RedisStreamWrapper {
 	return &redisStreamWrapper{
-		c:          w.C,
-		stream:     streamName,
-		bufferSize: bufferSize,
+		c:           w.C,
+		stream:      streamName,
+		bufferSize:  bufferSize,
+		messageChan: make(chan interface{}, bufferSize),
 	}
 }
