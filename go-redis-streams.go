@@ -1,8 +1,6 @@
 package goredis
 
 import (
-	"fmt"
-
 	"github.com/go-redis/redis/v7"
 	"github.com/vmihailenco/msgpack/v5"
 )
@@ -22,11 +20,12 @@ type RedisStreamWrapper interface {
 }
 
 type redisStreamWrapper struct {
-	c           *redis.Client
-	stream      string
-	bufferSize  int
-	messageChan chan interface{} // Channel where the consumed messages are send
-	errChan     chan error
+	c            *redis.Client
+	stream       string
+	bufferSize   int
+	messageChan  chan interface{} // Channel where the consumed messages are send
+	errChan      chan error
+	finishedChan chan bool
 }
 
 // SetChannels set the message and error channels
@@ -47,6 +46,11 @@ func (s *redisStreamWrapper) MessageChannel() chan interface{} {
 // ErrorChannel get the error channel
 func (s *redisStreamWrapper) ErrorChannel() chan error {
 	return s.errChan
+}
+
+// FinishedChannel get the finished notification channel
+func (s *redisStreamWrapper) FinishedChannel() chan bool {
+	return s.finishedChan
 }
 
 // Publish publish data into the stream
@@ -73,7 +77,6 @@ func (s *redisStreamWrapper) Consume(count int64) {
 			}
 			if err != nil {
 				s.errChan <- err
-				fmt.Printf("ERROR XRANGE: %v", err)
 				return
 			}
 			for _, element := range data {
@@ -82,14 +85,14 @@ func (s *redisStreamWrapper) Consume(count int64) {
 				err := msgpack.Unmarshal(data, &message)
 				if err != nil {
 					s.errChan <- err
-					fmt.Printf("ERROR UNPACKING: %v", err)
 					return
 				}
-				fmt.Printf("SENDING MESSAGE TO CHANNEL: %v", message)
 				s.messageChan <- message
 				s.c.XDel(s.stream, element.ID) // Remove consumed message
 			}
-			// TODO: channel to stop listen the stream
+			// channel to stop listen the stream
+			s.finishedChan <- true
+			break
 		}
 	}()
 }
