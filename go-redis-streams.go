@@ -1,6 +1,8 @@
 package goredis
 
 import (
+	"fmt"
+
 	"github.com/go-redis/redis/v7"
 	"github.com/vmihailenco/msgpack/v5"
 )
@@ -13,24 +15,38 @@ type RedisStreamWrapper interface {
 	Publish(message interface{}) (string, error)
 	// Consume consume messages from the stream with a count limit. If 0 it will consume all messages
 	Consume(count int64)
+	// MessageChannel get the message channel
+	MessageChannel() chan interface{}
+	// ErrorChannel get the error channel
+	ErrorChannel() chan error
 }
 
 type redisStreamWrapper struct {
 	c           *redis.Client
 	stream      string
 	bufferSize  int
-	MessageChan chan interface{} // Channel where the consumed messages are send
-	ErrChan     chan error
+	messageChan chan interface{} // Channel where the consumed messages are send
+	errChan     chan error
 }
 
 // SetChannels set the message and error channels
 func (s *redisStreamWrapper) SetChannels(messageChan chan interface{}, errChan chan error) {
 	if messageChan != nil {
-		s.MessageChan = messageChan
+		s.messageChan = messageChan
 	}
 	if errChan != nil {
-		s.ErrChan = errChan
+		s.errChan = errChan
 	}
+}
+
+// MessageChannel get the message channel
+func (s *redisStreamWrapper) MessageChannel() chan interface{} {
+	return s.messageChan
+}
+
+// ErrorChannel get the error channel
+func (s *redisStreamWrapper) ErrorChannel() chan error {
+	return s.errChan
 }
 
 // Publish publish data into the stream
@@ -46,7 +62,6 @@ func (s *redisStreamWrapper) Publish(message interface{}) (string, error) {
 
 // Consume consume messages from the stream with a count limit. If 0 it will consume all messages
 func (s *redisStreamWrapper) Consume(count int64) {
-	s.MessageChan = make(chan interface{}, s.bufferSize)
 	go func() {
 		for {
 			var err error
@@ -57,20 +72,24 @@ func (s *redisStreamWrapper) Consume(count int64) {
 				data, err = s.c.XRange(s.stream, "-", "+").Result()
 			}
 			if err != nil {
-				s.ErrChan <- err
-				continue
+				s.errChan <- err
+				fmt.Printf("ERROR XRANGE: %v", err)
+				return
 			}
 			for _, element := range data {
 				data := []byte(element.Values["data"].(string)) // Get pack message
 				var message interface{}
 				err := msgpack.Unmarshal(data, &message)
 				if err != nil {
-					s.ErrChan <- err
+					s.errChan <- err
+					fmt.Printf("ERROR UNPACKING: %v", err)
 					return
 				}
-				s.MessageChan <- message
+				fmt.Printf("SENDING MESSAGE TO CHANNEL: %v", message)
+				s.messageChan <- message
 				s.c.XDel(s.stream, element.ID) // Remove consumed message
 			}
+			// TODO: channel to stop listen the stream
 		}
 	}()
 }

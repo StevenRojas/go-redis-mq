@@ -92,7 +92,7 @@ func (w *redisWapper) CreateStream(streamName string, bufferSize int) RedisStrea
 		c:           w.C,
 		stream:      streamName,
 		bufferSize:  bufferSize,
-		MessageChan: make(chan interface{}, bufferSize),
-		ErrChan:     make(chan error),
+		messageChan: make(chan interface{}, bufferSize),
+		errChan:     make(chan error),
 	}
 }
