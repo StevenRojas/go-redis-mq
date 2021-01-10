@@ -62,11 +62,11 @@ func (s *redisStreamWrapper) Consume(count int64) {
 			}
 			for _, element := range data {
 				data := []byte(element.Values["data"].(string)) // Get pack message
-				var message map[string]interface{}
+				var message interface{}
 				err := msgpack.Unmarshal(data, message)
 				if err != nil {
 					s.ErrChan <- err
-					continue
+					return
 				}
 				s.MessageChan <- message
 				s.c.XDel(s.stream, element.ID) // Remove consumed message
