@@ -17,6 +17,8 @@ type RedisStreamWrapper interface {
 	MessageChannel() chan interface{}
 	// ErrorChannel get the error channel
 	ErrorChannel() chan error
+	// FinishedChannel get the finished notification channel
+	FinishedChannel() chan bool
 }
 
 type redisStreamWrapper struct {
