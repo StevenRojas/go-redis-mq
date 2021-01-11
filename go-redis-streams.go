@@ -1,6 +1,8 @@
 package goredis
 
 import (
+	"fmt"
+
 	"github.com/go-redis/redis/v7"
 	"github.com/vmihailenco/msgpack/v5"
 )
@@ -81,6 +83,9 @@ func (s *redisStreamWrapper) Consume(count int64) {
 				s.errChan <- err
 				return
 			}
+			if len(data) == 0 {
+				return
+			}
 			for _, element := range data {
 				data := []byte(element.Values["data"].(string)) // Get pack message
 				var message interface{}
@@ -89,6 +94,7 @@ func (s *redisStreamWrapper) Consume(count int64) {
 					s.errChan <- err
 					return
 				}
+				fmt.Printf("QUEUE MESSAGE %v\n", message)
 				s.messageChan <- message
 				s.c.XDel(s.stream, element.ID) // Remove consumed message
 			}
