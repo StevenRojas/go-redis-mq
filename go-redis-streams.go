@@ -1,8 +1,6 @@
 package goredis
 
 import (
-	"fmt"
-
 	"github.com/go-redis/redis/v7"
 	"github.com/vmihailenco/msgpack/v5"
 )
@@ -81,12 +79,6 @@ func (s *redisStreamWrapper) Consume(count int64) {
 			}
 			if err != nil {
 				s.errChan <- err
-			}
-			if len(data) == 0 {
-				// channel to stop listen the stream
-				fmt.Println("NO DATA")
-				// s.finishedChan <- true
-				continue
 			}
 			for _, element := range data {
 				data := []byte(element.Values["data"].(string)) // Get pack message
