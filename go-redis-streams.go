@@ -81,10 +81,10 @@ func (s *redisStreamWrapper) Consume(count int64) {
 			}
 			if err != nil {
 				s.errChan <- err
-				return
+				//return
 			}
 			if len(data) == 0 {
-				return
+				continue
 			}
 			for _, element := range data {
 				data := []byte(element.Values["data"].(string)) // Get pack message
@@ -92,14 +92,14 @@ func (s *redisStreamWrapper) Consume(count int64) {
 				err := msgpack.Unmarshal(data, &message)
 				if err != nil {
 					s.errChan <- err
-					return
+					continue
 				}
 				fmt.Printf("QUEUE MESSAGE %v\n", message)
 				s.messageChan <- message
 				s.c.XDel(s.stream, element.ID) // Remove consumed message
 			}
 			// channel to stop listen the stream
-			s.finishedChan <- true
+			//s.finishedChan <- true
 			//break
 		}
 	}()
