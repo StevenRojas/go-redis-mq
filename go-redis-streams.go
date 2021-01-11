@@ -1,8 +1,6 @@
 package goredis
 
 import (
-	"fmt"
-
 	"github.com/go-redis/redis/v7"
 	"github.com/vmihailenco/msgpack/v5"
 )
@@ -81,7 +79,6 @@ func (s *redisStreamWrapper) Consume(count int64) {
 			}
 			if err != nil {
 				s.errChan <- err
-				//return
 			}
 			if len(data) == 0 {
 				continue
@@ -94,12 +91,11 @@ func (s *redisStreamWrapper) Consume(count int64) {
 					s.errChan <- err
 					continue
 				}
-				fmt.Printf("QUEUE MESSAGE %v\n", message)
 				s.messageChan <- message
 				s.c.XDel(s.stream, element.ID) // Remove consumed message
 			}
 			// channel to stop listen the stream
-			//s.finishedChan <- true
+			s.finishedChan <- true
 			//break
 		}
 	}()
