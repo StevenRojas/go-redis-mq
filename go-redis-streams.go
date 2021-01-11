@@ -85,7 +85,7 @@ func (s *redisStreamWrapper) Consume(count int64) {
 			if len(data) == 0 {
 				// channel to stop listen the stream
 				fmt.Println("NO DATA")
-				s.finishedChan <- true
+				// s.finishedChan <- true
 				continue
 			}
 			for _, element := range data {
